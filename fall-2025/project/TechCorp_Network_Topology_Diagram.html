@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechCorp Network Topology</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        .topology-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .device-group:hover .device-box {
+            filter: brightness(1.2);
+            cursor: pointer;
+        }
+        .device-box {
+            transition: all 0.3s ease;
+        }
+        .connection-line {
+            stroke-linecap: round;
+        }
+        .trunk-line {
+            stroke: #00d4ff;
+            stroke-width: 3;
+            stroke-dasharray: none;
+        }
+        .access-line {
+            stroke: #4ade80;
+            stroke-width: 2;
+        }
+        .wan-line {
+            stroke: #f59e0b;
+            stroke-width: 3;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ccc;
+            font-size: 0.85rem;
+        }
+        .legend-line {
+            width: 30px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        .legend-trunk { background: #00d4ff; }
+        .legend-access { background: #4ade80; }
+        .legend-wan { background: #f59e0b; }
+        .info-panel {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .info-card h3 {
+            color: #00d4ff;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-card ul {
+            list-style: none;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+        .info-card li {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .info-card li:last-child {
+            border-bottom: none;
+        }
+        .vlan-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .vlan-10 { background: #6366f1; color: white; }
+        .vlan-20 { background: #22c55e; color: white; }
+        .vlan-30 { background: #eab308; color: black; }
+        .vlan-40 { background: #ef4444; color: white; }
+        .vlan-50 { background: #8b5cf6; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 TechCorp Enterprise Network Topology</h1>
+        <p class="subtitle">Cisco Packet Tracer Implementation - Portfolio Project</p>
+        
+        <div class="topology-container">
+            <svg viewBox="0 0 900 650" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="routerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3b82f6"/>
+                        <stop offset="100%" style="stop-color:#1d4ed8"/>
+                    </linearGradient>
+                    <linearGradient id="switchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#10b981"/>
+                        <stop offset="100%" style="stop-color:#059669"/>
+                    </linearGradient>
+                    <linearGradient id="serverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#8b5cf6"/>
+                        <stop offset="100%" style="stop-color:#6d28d9"/>
+                    </linearGradient>
+                    <linearGradient id="pcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#6b7280"/>
+                        <stop offset="100%" style="stop-color:#4b5563"/>
+                    </linearGradient>
+                    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#f59e0b"/>
+                        <stop offset="100%" style="stop-color:#d97706"/>
+                    </linearGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+
+                <!-- Connection Lines -->
+                <!-- ISP to R2 -->
+                <line x1="450" y1="70" x2="450" y2="120" class="connection-line wan-line"/>
+                
+                <!-- R2 to R1 -->
+                <line x1="450" y1="170" x2="450" y2="220" class="connection-line wan-line"/>
+                <text x="465" y="200" fill="#f59e0b" font-size="10">10.0.0.0/30</text>
+                
+                <!-- R1 to SW1 -->
+                <line x1="450" y1="270" x2="450" y2="320" class="connection-line trunk-line"/>
+                <text x="460" y="300" fill="#00d4ff" font-size="10">Trunk (G0/0-G0/1)</text>
+                
+                <!-- SW1 to SW2 -->
+                <line x1="380" y1="370" x2="250" y2="420" class="connection-line trunk-line"/>
+                <text x="280" y="385" fill="#00d4ff" font-size="10">Trunk</text>
+                
+                <!-- SW1 to SW3 -->
+                <line x1="520" y1="370" x2="650" y2="420" class="connection-line trunk-line"/>
+                <text x="580" y="385" fill="#00d4ff" font-size="10">Trunk</text>
+                
+                <!-- SW2 to IT PCs -->
+                <line x1="200" y1="470" x2="100" y2="530" class="connection-line access-line"/>
+                <line x1="250" y1="470" x2="180" y2="530" class="connection-line access-line"/>
+                
+                <!-- SW2 to HR PCs -->
+                <line x1="280" y1="470" x2="280" y2="530" class="connection-line access-line"/>
+                <line x1="320" y1="470" x2="360" y2="530" class="connection-line access-line"/>
+                
+                <!-- SW3 to Finance PCs -->
+                <line x1="600" y1="470" x2="540" y2="530" class="connection-line access-line"/>
+                <line x1="640" y1="470" x2="620" y2="530" class="connection-line access-line"/>
+                
+                <!-- SW3 to Servers -->
+                <line x1="700" y1="470" x2="720" y2="530" class="connection-line access-line"/>
+                <line x1="730" y1="470" x2="790" y2="530" class="connection-line access-line"/>
+                <line x1="760" y1="470" x2="860" y2="530" class="connection-line access-line"/>
+
+                <!-- ISP Cloud -->
+                <g class="device-group" transform="translate(400, 20)">
+                    <ellipse cx="50" cy="30" rx="60" ry="30" fill="url(#cloudGrad)" class="device-box"/>
+                    <text x="50" y="35" text-anchor="middle" fill="white" font-weight="bold" font-size="12">INTERNET</text>
+                    <text x="50" y="75" text-anchor="middle" fill="#888" font-size="10">203.0.113.2</text>
+                </g>
+
+                <!-- R2 - Edge Router -->
+                <g class="device-group" transform="translate(400, 120)">
+                    <rect x="0" y="0" width="100" height="50" rx="8" fill="url(#routerGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="50" y="25" text-anchor="middle" fill="white" font-weight="bold" font-size="14">R2</text>
+                    <text x="50" y="40" text-anchor="middle" fill="#ddd" font-size="9">Edge Router</text>
+                    <text x="50" y="65" text-anchor="middle" fill="#888" font-size="10">G0/1: 203.0.113.1</text>
+                </g>
+
+                <!-- R1 - Core Router -->
+                <g class="device-group" transform="translate(400, 220)">
+                    <rect x="0" y="0" width="100" height="50" rx="8" fill="url(#routerGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="50" y="25" text-anchor="middle" fill="white" font-weight="bold" font-size="14">R1</text>
+                    <text x="50" y="40" text-anchor="middle" fill="#ddd" font-size="9">Core Router</text>
+                    <text x="50" y="65" text-anchor="middle" fill="#888" font-size="10">Router-on-a-Stick</text>
+                </g>
+
+                <!-- SW1 - Distribution Switch -->
+                <g class="device-group" transform="translate(375, 320)">
+                    <rect x="0" y="0" width="150" height="50" rx="8" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="75" y="25" text-anchor="middle" fill="white" font-weight="bold" font-size="14">SW1</text>
+                    <text x="75" y="40" text-anchor="middle" fill="#ddd" font-size="9">Distribution Switch</text>
+                    <text x="75" y="65" text-anchor="middle" fill="#888" font-size="10">172.16.10.2</text>
+                </g>
+
+                <!-- SW2 - Access Switch -->
+                <g class="device-group" transform="translate(150, 420)">
+                    <rect x="0" y="0" width="150" height="50" rx="8" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="75" y="25" text-anchor="middle" fill="white" font-weight="bold" font-size="14">SW2</text>
+                    <text x="75" y="40" text-anchor="middle" fill="#ddd" font-size="9">Access Switch (IT/HR)</text>
+                    <text x="75" y="65" text-anchor="middle" fill="#888" font-size="10">172.16.10.3</text>
+                </g>
+
+                <!-- SW3 - Access Switch -->
+                <g class="device-group" transform="translate(575, 420)">
+                    <rect x="0" y="0" width="170" height="50" rx="8" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="85" y="25" text-anchor="middle" fill="white" font-weight="bold" font-size="14">SW3</text>
+                    <text x="85" y="40" text-anchor="middle" fill="#ddd" font-size="9">Access Switch (Finance/Servers)</text>
+                    <text x="85" y="65" text-anchor="middle" fill="#888" font-size="10">172.16.10.4</text>
+                </g>
+
+                <!-- IT Department PCs -->
+                <g class="device-group" transform="translate(60, 530)">
+                    <rect x="0" y="0" width="70" height="45" rx="6" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="35" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="11">IT-PC1</text>
+                    <text x="35" y="35" text-anchor="middle" fill="#4ade80" font-size="9">VLAN 20</text>
+                    <text x="35" y="55" text-anchor="middle" fill="#888" font-size="8">DHCP</text>
+                </g>
+                <g class="device-group" transform="translate(140, 530)">
+                    <rect x="0" y="0" width="70" height="45" rx="6" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="35" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="11">IT-PC2</text>
+                    <text x="35" y="35" text-anchor="middle" fill="#4ade80" font-size="9">VLAN 20</text>
+                    <text x="35" y="55" text-anchor="middle" fill="#888" font-size="8">DHCP</text>
+                </g>
+
+                <!-- HR Department PCs -->
+                <g class="device-group" transform="translate(240, 530)">
+                    <rect x="0" y="0" width="70" height="45" rx="6" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="35" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="11">HR-PC1</text>
+                    <text x="35" y="35" text-anchor="middle" fill="#eab308" font-size="9">VLAN 30</text>
+                    <text x="35" y="55" text-anchor="middle" fill="#888" font-size="8">DHCP</text>
+                </g>
+                <g class="device-group" transform="translate(320, 530)">
+                    <rect x="0" y="0" width="70" height="45" rx="6" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="35" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="11">HR-PC2</text>
+                    <text x="35" y="35" text-anchor="middle" fill="#eab308" font-size="9">VLAN 30</text>
+                    <text x="35" y="55" text-anchor="middle" fill="#888" font-size="8">DHCP</text>
+                </g>
+
+                <!-- Finance Department PCs -->
+                <g class="device-group" transform="translate(500, 530)">
+                    <rect x="0" y="0" width="70" height="45" rx="6" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="35" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="11">FIN-PC1</text>
+                    <text x="35" y="35" text-anchor="middle" fill="#ef4444" font-size="9">VLAN 40</text>
+                    <text x="35" y="55" text-anchor="middle" fill="#888" font-size="8">DHCP</text>
+                </g>
+                <g class="device-group" transform="translate(580, 530)">
+                    <rect x="0" y="0" width="70" height="45" rx="6" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="35" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="11">FIN-PC2</text>
+                    <text x="35" y="35" text-anchor="middle" fill="#ef4444" font-size="9">VLAN 40</text>
+                    <text x="35" y="55" text-anchor="middle" fill="#888" font-size="8">DHCP</text>
+                </g>
+
+                <!-- Servers -->
+                <g class="device-group" transform="translate(680, 530)">
+                    <rect x="0" y="0" width="70" height="50" rx="6" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="18" text-anchor="middle" fill="white" font-weight="bold" font-size="10">WEB</text>
+                    <text x="35" y="32" text-anchor="middle" fill="#ddd" font-size="8">HTTP/HTTPS</text>
+                    <text x="35" y="45" text-anchor="middle" fill="#ccc" font-size="8">172.16.50.10</text>
+                </g>
+                <g class="device-group" transform="translate(755, 530)">
+                    <rect x="0" y="0" width="70" height="50" rx="6" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="18" text-anchor="middle" fill="white" font-weight="bold" font-size="10">EMAIL</text>
+                    <text x="35" y="32" text-anchor="middle" fill="#ddd" font-size="8">SMTP/POP3</text>
+                    <text x="35" y="45" text-anchor="middle" fill="#ccc" font-size="8">172.16.50.20</text>
+                </g>
+                <g class="device-group" transform="translate(830, 530)">
+                    <rect x="0" y="0" width="60" height="50" rx="6" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="30" y="18" text-anchor="middle" fill="white" font-weight="bold" font-size="10">FTP</text>
+                    <text x="30" y="32" text-anchor="middle" fill="#ddd" font-size="8">File Server</text>
+                    <text x="30" y="45" text-anchor="middle" fill="#ccc" font-size="8">172.16.50.30</text>
+                </g>
+
+                <!-- VLAN Labels on sides -->
+                <g transform="translate(10, 545)">
+                    <text fill="#4ade80" font-size="11" font-weight="bold">VLAN 20</text>
+                    <text y="12" fill="#888" font-size="9">172.16.20.0/24</text>
+                </g>
+                <g transform="translate(405, 545)">
+                    <text fill="#eab308" font-size="11" font-weight="bold">VLAN 30</text>
+                    <text y="12" fill="#888" font-size="9">172.16.30.0/24</text>
+                </g>
+                <g transform="translate(405, 600)">
+                    <text fill="#ef4444" font-size="11" font-weight="bold">VLAN 40</text>
+                    <text y="12" fill="#888" font-size="9">172.16.40.0/24</text>
+                </g>
+                <g transform="translate(680, 600)">
+                    <text fill="#8b5cf6" font-size="11" font-weight="bold">VLAN 50 - Servers</text>
+                    <text y="12" fill="#888" font-size="9">172.16.50.0/24</text>
+                </g>
+            </svg>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-line legend-trunk"></div>
+                <span>Trunk Links (802.1Q)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line legend-access"></div>
+                <span>Access Ports</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line legend-wan"></div>
+                <span>WAN/Router Links</span>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>📡 Router Interfaces</h3>
+                <ul>
+                    <li><strong>R1 G0/0</strong> → Subinterfaces (.10-.50)</li>
+                    <li><strong>R1 G0/1</strong> → 10.0.0.1/30 to R2</li>
+                    <li><strong>R2 G0/0</strong> → 10.0.0.2/30 to R1</li>
+                    <li><strong>R2 G0/1</strong> → 203.0.113.1/30 to ISP</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>🔀 VLAN Summary</h3>
+                <ul>
+                    <li><span class="vlan-tag vlan-10">10</span>Management - 172.16.10.0/24</li>
+                    <li><span class="vlan-tag vlan-20">20</span>IT Dept - 172.16.20.0/24</li>
+                    <li><span class="vlan-tag vlan-30">30</span>HR Dept - 172.16.30.0/24</li>
+                    <li><span class="vlan-tag vlan-40">40</span>Finance - 172.16.40.0/24</li>
+                    <li><span class="vlan-tag vlan-50">50</span>Servers - 172.16.50.0/24</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>🔌 Port Assignments</h3>
+                <ul>
+                    <li><strong>SW1 G0/1</strong> → Trunk to R1</li>
+                    <li><strong>SW1 G0/2</strong> → Trunk to SW2</li>
+                    <li><strong>SW1 Fa0/1</strong> → Trunk to SW3</li>
+                    <li><strong>SW2 Fa0/1-10</strong> → VLAN 20 (IT)</li>
+                    <li><strong>SW2 Fa0/11-20</strong> → VLAN 30 (HR)</li>
+                    <li><strong>SW3 Fa0/2-10</strong> → VLAN 40 (Finance)</li>
+                    <li><strong>SW3 Fa0/20-24</strong> → VLAN 50 (Servers)</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>🖥️ Server Details</h3>
+                <ul>
+                    <li><strong>Web Server</strong> - 172.16.50.10 (HTTP/HTTPS)</li>
+                    <li><strong>Email Server</strong> - 172.16.50.20 (SMTP/POP3)</li>
+                    <li><strong>FTP Server</strong> - 172.16.50.30 (FTP)</li>
+                    <li>All servers use Gateway: 172.16.50.1</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

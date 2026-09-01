@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Internetworking Topology</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        .subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+        .topology-container {
+            position: relative;
+            width: 1100px;
+            height: 750px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* SVG for connections */
+        .connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .connection {
+            stroke-width: 3;
+            fill: none;
+        }
+        .conn-ospf { stroke: #4CAF50; }
+        .conn-eigrp { stroke: #FF9800; }
+        .conn-static { stroke: #9C27B0; stroke-dasharray: 8,4; }
+        .conn-trunk { stroke: #2196F3; }
+        .conn-etherchannel { stroke: #E91E63; stroke-width: 5; }
+        .conn-access { stroke: #607D8B; stroke-width: 2; }
+        
+        /* Devices */
+        .device {
+            position: absolute;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, filter 0.3s;
+        }
+        .device:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.8));
+        }
+        .device-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 28px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .router-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .switch-icon {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .switch-l3-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .pc-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+        }
+        .device-name {
+            font-size: 12px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .device-ip {
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 2px;
+        }
+        
+        /* Port Labels */
+        .port-label {
+            position: absolute;
+            font-size: 9px;
+            color: #ffeb3b;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
+            pointer-events: none;
+        }
+        
+        /* Zone Labels */
+        .zone {
+            position: absolute;
+            border: 2px dashed;
+            border-radius: 15px;
+            padding: 10px;
+        }
+        .zone-label {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: #1a1a2e;
+            padding: 2px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        .zone-site-a {
+            border-color: #4CAF50;
+            left: 50px;
+            top: 200px;
+            width: 480px;
+            height: 500px;
+        }
+        .zone-site-a .zone-label { color: #4CAF50; }
+        .zone-site-b {
+            border-color: #FF9800;
+            left: 600px;
+            top: 280px;
+            width: 450px;
+            height: 420px;
+        }
+        .zone-site-b .zone-label { color: #FF9800; }
+        
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.6);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #00d4ff;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-line {
+            width: 30px;
+            height: 3px;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+        .legend-ospf { background: #4CAF50; }
+        .legend-eigrp { background: #FF9800; }
+        .legend-static { background: repeating-linear-gradient(90deg, #9C27B0, #9C27B0 8px, transparent 8px, transparent 12px); }
+        .legend-trunk { background: #2196F3; }
+        .legend-etherchannel { background: #E91E63; height: 5px; }
+        .legend-access { background: #607D8B; height: 2px; }
+        
+        /* Info Panel */
+        .info-panel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 280px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .info-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 8px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+        }
+        .info-label { color: #888; }
+        .info-value { color: #fff; font-weight: 500; }
+        .info-section {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .info-section-title {
+            color: #ff9800;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        
+        /* Protocol Badges */
+        .protocol-badge {
+            position: absolute;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+        .badge-ospf {
+            background: #4CAF50;
+            color: #fff;
+        }
+        .badge-eigrp {
+            background: #FF9800;
+            color: #fff;
+        }
+        .badge-static {
+            background: #9C27B0;
+            color: #fff;
+        }
+        
+        /* VLAN Table */
+        .vlan-table {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 11px;
+        }
+        .vlan-table-title {
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+        .vlan-row {
+            display: grid;
+            grid-template-columns: 50px 80px 100px;
+            gap: 8px;
+            margin: 4px 0;
+            padding: 3px 0;
+        }
+        .vlan-header {
+            font-weight: bold;
+            color: #888;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+        }
+        .vlan-id { color: #4CAF50; }
+        .vlan-name { color: #fff; }
+        .vlan-network { color: #aaa; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🌐 Enterprise Internetworking Topology</h1>
+    <p class="subtitle">OSPF + EIGRP Dynamic Routing | Dual-Stack IPv4/IPv6 | VTP | EtherChannel | STP</p>
+    
+    <div class="topology-container">
+        <!-- SVG Connections -->
+        <svg class="connections">
+            <!-- R-CORE to R-SITE-A (OSPF) -->
+            <path class="connection conn-ospf" d="M 550,80 L 280,240" />
+            <!-- R-CORE to R-SITE-B (EIGRP) -->
+            <path class="connection conn-eigrp" d="M 550,80 L 820,320" />
+            <!-- R-SITE-A to R-SITE-B (Static Backup) -->
+            <path class="connection conn-static" d="M 280,280 Q 550,350 820,360" />
+            
+            <!-- R-SITE-A to SW-DIST (Trunk) -->
+            <path class="connection conn-trunk" d="M 280,280 L 280,380" />
+            <!-- R-SITE-B to SW-SITE-B (Trunk) -->
+            <path class="connection conn-trunk" d="M 820,360 L 820,460" />
+            
+            <!-- SW-DIST to SW-ACC1 (EtherChannel) -->
+            <path class="connection conn-etherchannel" d="M 240,420 L 140,520" />
+            <!-- SW-DIST to SW-ACC2 (Trunk) -->
+            <path class="connection conn-trunk" d="M 320,420 L 420,520" />
+            
+            <!-- SW-ACC1 to PCs -->
+            <path class="connection conn-access" d="M 100,560 L 80,630" />
+            <path class="connection conn-access" d="M 140,560 L 200,630" />
+            
+            <!-- SW-ACC2 to PCs -->
+            <path class="connection conn-access" d="M 400,560 L 340,630" />
+            <path class="connection conn-access" d="M 440,560 L 480,630" />
+            
+            <!-- SW-SITE-B to PCs -->
+            <path class="connection conn-access" d="M 780,500 L 720,590" />
+            <path class="connection conn-access" d="M 860,500 L 920,590" />
+        </svg>
+        
+        <!-- Zone Labels -->
+        <div class="zone zone-site-a">
+            <span class="zone-label">🏢 SITE A (HQ) - OSPF Area 0</span>
+        </div>
+        <div class="zone zone-site-b">
+            <span class="zone-label">🏭 SITE B (Branch) - EIGRP AS 100</span>
+        </div>
+        
+        <!-- Protocol Badges -->
+        <div class="protocol-badge badge-ospf" style="left: 380px; top: 140px;">OSPF Area 0</div>
+        <div class="protocol-badge badge-eigrp" style="left: 650px; top: 180px;">EIGRP AS 100</div>
+        <div class="protocol-badge badge-static" style="left: 500px; top: 310px;">Static Backup</div>
+        
+        <!-- R-CORE -->
+        <div class="device" style="left: 510px; top: 30px;" onclick="showInfo('r-core')">
+            <div class="device-icon router-icon">R</div>
+            <div class="device-name">R-CORE</div>
+            <div class="device-ip">Redistribution Point</div>
+        </div>
+        <div class="port-label" style="left: 470px; top: 85px;">G0/0</div>
+        <div class="port-label" style="left: 570px; top: 85px;">G0/1</div>
+        
+        <!-- R-SITE-A -->
+        <div class="device" style="left: 240px; top: 220px;" onclick="showInfo('r-site-a')">
+            <div class="device-icon router-icon">R</div>
+            <div class="device-name">R-SITE-A</div>
+            <div class="device-ip">10.0.12.2 | 2001:db8:12::2</div>
+        </div>
+        <div class="port-label" style="left: 220px; top: 215px;">G0/0↑</div>
+        <div class="port-label" style="left: 310px; top: 260px;">G0/2→</div>
+        <div class="port-label" style="left: 260px; top: 295px;">G0/1↓</div>
+        
+        <!-- R-SITE-B -->
+        <div class="device" style="left: 780px; top: 300px;" onclick="showInfo('r-site-b')">
+            <div class="device-icon router-icon">R</div>
+            <div class="device-name">R-SITE-B</div>
+            <div class="device-ip">10.0.13.2 | 2001:db8:13::2</div>
+        </div>
+        <div class="port-label" style="left: 800px; top: 295px;">G0/0↑</div>
+        <div class="port-label" style="left: 750px; top: 340px;">←G0/2</div>
+        <div class="port-label" style="left: 820px; top: 375px;">G0/1↓</div>
+        
+        <!-- SW-DIST -->
+        <div class="device" style="left: 240px; top: 380px;" onclick="showInfo('sw-dist')">
+            <div class="device-icon switch-l3-icon">S</div>
+            <div class="device-name">SW-DIST</div>
+            <div class="device-ip">VTP Server | STP Root</div>
+        </div>
+        <div class="port-label" style="left: 200px; top: 435px;">Fa0/23-24</div>
+        <div class="port-label" style="left: 310px; top: 435px;">Fa0/1</div>
+        
+        <!-- SW-ACC1 -->
+        <div class="device" style="left: 100px; top: 500px;" onclick="showInfo('sw-acc1')">
+            <div class="device-icon switch-icon">S</div>
+            <div class="device-name">SW-ACC1</div>
+            <div class="device-ip">IT Dept | VLAN 20</div>
+        </div>
+        <div class="port-label" style="left: 70px; top: 575px;">Fa0/2</div>
+        <div class="port-label" style="left: 150px; top: 575px;">Fa0/3</div>
+        
+        <!-- SW-ACC2 -->
+        <div class="device" style="left: 380px; top: 500px;" onclick="showInfo('sw-acc2')">
+            <div class="device-icon switch-icon">S</div>
+            <div class="device-name">SW-ACC2</div>
+            <div class="device-ip">HR Dept | VLAN 30</div>
+        </div>
+        <div class="port-label" style="left: 350px; top: 575px;">Fa0/2</div>
+        <div class="port-label" style="left: 430px; top: 575px;">Fa0/3</div>
+        
+        <!-- SW-SITE-B -->
+        <div class="device" style="left: 780px; top: 450px;" onclick="showInfo('sw-site-b')">
+            <div class="device-icon switch-icon">S</div>
+            <div class="device-name">SW-SITE-B</div>
+            <div class="device-ip">Finance | VLAN 40</div>
+        </div>
+        <div class="port-label" style="left: 750px; top: 525px;">Fa0/2</div>
+        <div class="port-label" style="left: 850px; top: 525px;">Fa0/3</div>
+        
+        <!-- IT PCs -->
+        <div class="device" style="left: 60px; top: 620px;">
+            <div class="device-icon pc-icon">💻</div>
+            <div class="device-name">IT-PC1</div>
+            <div class="device-ip">DHCP: 10.10.20.x</div>
+        </div>
+        <div class="device" style="left: 160px; top: 620px;">
+            <div class="device-icon pc-icon">💻</div>
+            <div class="device-name">IT-PC2</div>
+            <div class="device-ip">DHCP: 10.10.20.x</div>
+        </div>
+        
+        <!-- HR PCs -->
+        <div class="device" style="left: 320px; top: 620px;">
+            <div class="device-icon pc-icon">💻</div>
+            <div class="device-name">HR-PC1</div>
+            <div class="device-ip">DHCP: 10.10.30.x</div>
+        </div>
+        <div class="device" style="left: 440px; top: 620px;">
+            <div class="device-icon pc-icon">💻</div>
+            <div class="device-name">HR-PC2</div>
+            <div class="device-ip">DHCP: 10.10.30.x</div>
+        </div>
+        
+        <!-- Finance PCs -->
+        <div class="device" style="left: 680px; top: 580px;">
+            <div class="device-icon pc-icon">💻</div>
+            <div class="device-name">FIN-PC1</div>
+            <div class="device-ip">DHCP: 10.10.40.x</div>
+        </div>
+        <div class="device" style="left: 880px; top: 580px;">
+            <div class="device-icon pc-icon">💻</div>
+            <div class="device-name">FIN-PC2</div>
+            <div class="device-ip">DHCP: 10.10.40.x</div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <div class="info-title">📊 Network Overview</div>
+            <div class="info-row">
+                <span class="info-label">Routers:</span>
+                <span class="info-value">3 (Cisco 2911)</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Switches:</span>
+                <span class="info-value">4 (3560 + 2960)</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">End Devices:</span>
+                <span class="info-value">6 PCs</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">VLANs:</span>
+                <span class="info-value">4 (10, 20, 30, 40)</span>
+            </div>
+            <div class="info-section">
+                <div class="info-section-title">🔄 Routing Protocols</div>
+                <div class="info-row">
+                    <span class="info-label">OSPF:</span>
+                    <span class="info-value">Area 0 (Site A)</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">EIGRP:</span>
+                    <span class="info-value">AS 100 (Site B)</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Static:</span>
+                    <span class="info-value">Backup Path</span>
+                </div>
+            </div>
+            <div class="info-section">
+                <div class="info-section-title">⚡ Advanced Features</div>
+                <div class="info-row">
+                    <span class="info-label">VTP:</span>
+                    <span class="info-value">Server/Client</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">STP:</span>
+                    <span class="info-value">Rapid-PVST+</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">EtherChannel:</span>
+                    <span class="info-value">LACP Po1</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">DHCP:</span>
+                    <span class="info-value">IPv4 + IPv6</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VLAN Table -->
+        <div class="vlan-table">
+            <div class="vlan-table-title">📋 VLAN / IP Summary</div>
+            <div class="vlan-row vlan-header">
+                <span>VLAN</span>
+                <span>Name</span>
+                <span>Network</span>
+            </div>
+            <div class="vlan-row">
+                <span class="vlan-id">10</span>
+                <span class="vlan-name">Mgmt</span>
+                <span class="vlan-network">10.10.10.0/24</span>
+            </div>
+            <div class="vlan-row">
+                <span class="vlan-id">20</span>
+                <span class="vlan-name">IT_Dept</span>
+                <span class="vlan-network">10.10.20.0/24</span>
+            </div>
+            <div class="vlan-row">
+                <span class="vlan-id">30</span>
+                <span class="vlan-name">HR_Dept</span>
+                <span class="vlan-network">10.10.30.0/24</span>
+            </div>
+            <div class="vlan-row">
+                <span class="vlan-id">40</span>
+                <span class="vlan-name">Finance</span>
+                <span class="vlan-network">10.10.40.0/24</span>
+            </div>
+            <div class="vlan-row" style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px;">
+                <span style="color: #00d4ff;">IPv6</span>
+                <span class="vlan-name">All</span>
+                <span class="vlan-network">2001:db8:X::/64</span>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-title">🔌 Connection Types</div>
+            <div class="legend-item">
+                <div class="legend-line legend-ospf"></div>
+                <span>OSPF Link</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line legend-eigrp"></div>
+                <span>EIGRP Link</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line legend-static"></div>
+                <span>Static Route (Backup)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line legend-trunk"></div>
+                <span>Trunk Link</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line legend-etherchannel"></div>
+                <span>EtherChannel (LACP)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line legend-access"></div>
+                <span>Access Port</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechCorp Enterprise Network - Expanded</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0d1f2d 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #fff;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 5px;
+            font-size: 2rem;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+        }
+        .subtitle { text-align: center; color: #888; margin-bottom: 15px; font-size: 0.95rem; }
+        .badge-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .badge { padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; }
+        .badge-hsrp { background: #ef4444; }
+        .badge-ipv6 { background: #8b5cf6; }
+        .badge-dmz { background: #f59e0b; }
+        .badge-voip { background: #06b6d4; }
+        .badge-wireless { background: #10b981; }
+        .badge-vpn { background: #ec4899; }
+        .badge-iot { background: #84cc16; }
+        .badge-stp { background: #f97316; }
+        .badge-qos { background: #6366f1; }
+        
+        .topology-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        svg { width: 100%; min-width: 1400px; height: auto; display: block; }
+        
+        .zone-box {
+            fill: rgba(255, 255, 255, 0.02);
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+            rx: 10;
+        }
+        .zone-label { font-size: 10px; font-weight: bold; fill: #666; }
+        .device-group:hover .device-box {
+            filter: brightness(1.3) drop-shadow(0 0 8px rgba(255,255,255,0.3));
+            cursor: pointer;
+        }
+        .device-box { transition: all 0.3s ease; }
+        
+        .trunk-line { stroke: #00d4ff; stroke-width: 2.5; }
+        .access-line { stroke: #4ade80; stroke-width: 1.5; }
+        .wan-line { stroke: #f59e0b; stroke-width: 2.5; }
+        .etherchannel { stroke: #ec4899; stroke-width: 3; }
+        .hsrp-line { stroke: #ef4444; stroke-width: 2; stroke-dasharray: 5,3; }
+        .wireless-line { stroke: #10b981; stroke-width: 1.5; stroke-dasharray: 3,3; }
+        .mgmt-line { stroke: #8b5cf6; stroke-width: 1.5; stroke-dasharray: 2,2; }
+        
+        .pt-device-label {
+            font-size: 7px;
+            fill: #666;
+            font-style: italic;
+        }
+        
+        .legend {
+            display: flex; justify-content: center; gap: 15px;
+            flex-wrap: wrap; padding: 12px;
+            background: rgba(0,0,0,0.3); border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; color: #aaa; font-size: 0.75rem; }
+        .legend-line { width: 20px; height: 3px; border-radius: 2px; }
+        .legend-trunk { background: #00d4ff; }
+        .legend-access { background: #4ade80; }
+        .legend-wan { background: #f59e0b; }
+        .legend-ether { background: #ec4899; }
+        .legend-hsrp { background: #ef4444; }
+        .legend-wireless { background: #10b981; }
+        .legend-mgmt { background: #8b5cf6; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .info-card h3 {
+            color: #00d4ff;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 6px;
+        }
+        .info-card table { width: 100%; font-size: 0.72rem; color: #bbb; }
+        .info-card td { padding: 3px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .info-card td:first-child { color: #888; width: 45%; }
+        .info-card .highlight { color: #4ade80; font-weight: bold; }
+        .info-card .pt-model { color: #f59e0b; font-style: italic; font-size: 0.65rem; }
+        
+        .vlan-tag {
+            display: inline-block; padding: 1px 5px; border-radius: 3px;
+            font-size: 0.6rem; font-weight: bold; margin-right: 2px;
+        }
+        .v10 { background: #6366f1; }
+        .v20 { background: #22c55e; }
+        .v30 { background: #eab308; color: #000; }
+        .v40 { background: #ef4444; }
+        .v50 { background: #8b5cf6; }
+        .v60 { background: #06b6d4; }
+        .v70 { background: #10b981; }
+        .v80 { background: #f97316; }
+        .v90 { background: #84cc16; }
+        .v100 { background: #dc2626; }
+        .v110 { background: #64748b; }
+
+        .device-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .device-category {
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #00d4ff;
+        }
+        .device-category h4 { color: #00d4ff; font-size: 0.85rem; margin-bottom: 8px; }
+        .device-category ul { list-style: none; font-size: 0.75rem; color: #aaa; }
+        .device-category li { padding: 3px 0; display: flex; justify-content: space-between; }
+        .device-category .model { color: #f59e0b; }
+        
+        .stats-bar {
+            display: flex; justify-content: center; gap: 30px;
+            padding: 15px; background: rgba(0,212,255,0.1);
+            border-radius: 10px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .stat-item { text-align: center; }
+        .stat-number { font-size: 1.8rem; font-weight: bold; color: #00d4ff; }
+        .stat-label { font-size: 0.75rem; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 TechCorp Enterprise Network - Expanded Architecture</h1>
+        <p class="subtitle">Multi-Site Infrastructure with Full Redundancy, Security Zones, VoIP, Wireless, IoT & IPv6</p>
+        
+        <div class="badge-container">
+            <span class="badge badge-hsrp">HSRP Redundancy</span>
+            <span class="badge badge-stp">Rapid PVST+</span>
+            <span class="badge badge-ipv6">Dual-Stack IPv6</span>
+            <span class="badge badge-dmz">DMZ Security</span>
+            <span class="badge badge-voip">VoIP/QoS</span>
+            <span class="badge badge-wireless">Enterprise Wireless</span>
+            <span class="badge badge-iot">IoT/Cameras</span>
+            <span class="badge badge-vpn">Site-to-Site WAN</span>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item"><div class="stat-number">5</div><div class="stat-label">Routers</div></div>
+            <div class="stat-item"><div class="stat-number">10</div><div class="stat-label">Switches</div></div>
+            <div class="stat-item"><div class="stat-number">11</div><div class="stat-label">Servers</div></div>
+            <div class="stat-item"><div class="stat-number">12</div><div class="stat-label">VLANs</div></div>
+            <div class="stat-item"><div class="stat-number">3</div><div class="stat-label">WAPs</div></div>
+            <div class="stat-item"><div class="stat-number">15+</div><div class="stat-label">End Devices</div></div>
+            <div class="stat-item"><div class="stat-number">2</div><div class="stat-label">Sites</div></div>
+        </div>
+        
+        <div class="topology-container">
+            <svg viewBox="0 0 1450 950" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="routerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3b82f6"/><stop offset="100%" style="stop-color:#1d4ed8"/>
+                    </linearGradient>
+                    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#7c3aed"/><stop offset="100%" style="stop-color:#5b21b6"/>
+                    </linearGradient>
+                    <linearGradient id="switchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#10b981"/><stop offset="100%" style="stop-color:#059669"/>
+                    </linearGradient>
+                    <linearGradient id="l3switchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0891b2"/><stop offset="100%" style="stop-color:#0e7490"/>
+                    </linearGradient>
+                    <linearGradient id="serverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#8b5cf6"/><stop offset="100%" style="stop-color:#6d28d9"/>
+                    </linearGradient>
+                    <linearGradient id="dmzGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#f59e0b"/><stop offset="100%" style="stop-color:#d97706"/>
+                    </linearGradient>
+                    <linearGradient id="firewallGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#dc2626"/><stop offset="100%" style="stop-color:#b91c1c"/>
+                    </linearGradient>
+                    <linearGradient id="pcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#6b7280"/><stop offset="100%" style="stop-color:#4b5563"/>
+                    </linearGradient>
+                    <linearGradient id="phoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0891b2"/><stop offset="100%" style="stop-color:#0e7490"/>
+                    </linearGradient>
+                    <linearGradient id="wapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#10b981"/><stop offset="100%" style="stop-color:#059669"/>
+                    </linearGradient>
+                    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#f59e0b"/><stop offset="100%" style="stop-color:#d97706"/>
+                    </linearGradient>
+                    <linearGradient id="branchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ec4899"/><stop offset="100%" style="stop-color:#be185d"/>
+                    </linearGradient>
+                    <linearGradient id="iotGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#84cc16"/><stop offset="100%" style="stop-color:#65a30d"/>
+                    </linearGradient>
+                    <linearGradient id="printerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#64748b"/><stop offset="100%" style="stop-color:#475569"/>
+                    </linearGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                </defs>
+
+                <!-- ========== ZONE BOXES ========== -->
+                <!-- Internet Zone -->
+                <rect x="400" y="8" width="400" height="70" class="zone-box" fill="rgba(245,158,11,0.05)"/>
+                <text x="600" y="25" class="zone-label" text-anchor="middle" fill="#f59e0b">INTERNET / WAN EDGE</text>
+
+                <!-- DMZ Zone -->
+                <rect x="900" y="8" width="530" height="250" class="zone-box" fill="rgba(239,68,68,0.05)"/>
+                <text x="1165" y="25" class="zone-label" text-anchor="middle" fill="#ef4444">DMZ SECURITY ZONE (VLAN 100)</text>
+
+                <!-- Core Zone -->
+                <rect x="250" y="90" width="600" height="130" class="zone-box" fill="rgba(139,92,246,0.05)"/>
+                <text x="550" y="107" class="zone-label" text-anchor="middle" fill="#8b5cf6">CORE LAYER - HSRP REDUNDANCY</text>
+
+                <!-- Distribution Zone -->
+                <rect x="50" y="235" width="800" height="95" class="zone-box" fill="rgba(6,182,212,0.05)"/>
+                <text x="450" y="252" class="zone-label" text-anchor="middle" fill="#06b6d4">DISTRIBUTION LAYER - ETHERCHANNEL + RAPID PVST+</text>
+
+                <!-- Access Zone -->
+                <rect x="20" y="345" width="860" height="320" class="zone-box" fill="rgba(16,185,129,0.05)"/>
+                <text x="450" y="362" class="zone-label" text-anchor="middle" fill="#10b981">ACCESS LAYER - PORT SECURITY + VOICE VLAN</text>
+
+                <!-- Server Zone -->
+                <rect x="900" y="270" width="530" height="200" class="zone-box" fill="rgba(139,92,246,0.05)"/>
+                <text x="1165" y="287" class="zone-label" text-anchor="middle" fill="#8b5cf6">INTERNAL DATA CENTER (VLAN 50)</text>
+
+                <!-- IoT Zone -->
+                <rect x="900" y="485" width="260" height="150" class="zone-box" fill="rgba(132,204,22,0.05)"/>
+                <text x="1030" y="502" class="zone-label" text-anchor="middle" fill="#84cc16">IoT / SECURITY (VLAN 90)</text>
+
+                <!-- Wireless Zone -->
+                <rect x="550" y="680" width="330" height="130" class="zone-box" fill="rgba(16,185,129,0.05)"/>
+                <text x="715" y="697" class="zone-label" text-anchor="middle" fill="#10b981">WIRELESS COVERAGE</text>
+
+                <!-- Branch Zone -->
+                <rect x="1175" y="485" width="255" height="200" class="zone-box" fill="rgba(236,72,153,0.05)"/>
+                <text x="1302" y="502" class="zone-label" text-anchor="middle" fill="#ec4899">BRANCH OFFICE (SITE B)</text>
+
+                <!-- Management Zone -->
+                <rect x="20" y="680" width="200" height="130" class="zone-box" fill="rgba(99,102,241,0.05)"/>
+                <text x="120" y="697" class="zone-label" text-anchor="middle" fill="#6366f1">NETWORK MGMT</text>
+
+                <!-- ========== CONNECTION LINES ========== -->
+                <!-- ISP to Edge -->
+                <line x1="600" y1="60" x2="600" y2="95" class="wan-line"/>
+                
+                <!-- Edge to Core Routers -->
+                <line x1="540" y1="140" x2="420" y2="165" class="trunk-line"/>
+                <line x1="660" y1="140" x2="660" y2="165" class="trunk-line"/>
+                
+                <!-- Edge to DMZ -->
+                <line x1="700" y1="120" x2="920" y2="80" class="wan-line"/>
+                
+                <!-- HSRP Link -->
+                <line x1="470" y1="190" x2="610" y2="190" class="hsrp-line"/>
+                <text x="540" y="185" fill="#ef4444" font-size="8" text-anchor="middle">HSRP</text>
+                
+                <!-- Core to Distribution -->
+                <line x1="400" y1="210" x2="300" y2="270" class="trunk-line"/>
+                <line x1="400" y1="210" x2="550" y2="270" class="trunk-line"/>
+                <line x1="680" y1="210" x2="300" y2="270" class="trunk-line" opacity="0.5"/>
+                <line x1="680" y1="210" x2="550" y2="270" class="trunk-line"/>
+                
+                <!-- EtherChannel -->
+                <line x1="370" y1="295" x2="480" y2="295" class="etherchannel"/>
+                <line x1="370" y1="300" x2="480" y2="300" class="etherchannel"/>
+                <text x="425" y="318" fill="#ec4899" font-size="8" text-anchor="middle">Po1 (LACP)</text>
+                
+                <!-- Distribution to Access -->
+                <line x1="250" y1="315" x2="120" y2="385" class="trunk-line"/>
+                <line x1="300" y1="315" x2="280" y2="385" class="trunk-line"/>
+                <line x1="350" y1="315" x2="440" y2="385" class="trunk-line"/>
+                <line x1="550" y1="315" x2="440" y2="385" class="trunk-line"/>
+                <line x1="600" y1="315" x2="600" y2="385" class="trunk-line"/>
+                <line x1="650" y1="315" x2="760" y2="385" class="trunk-line"/>
+                
+                <!-- Core to Servers -->
+                <line x1="720" y1="190" x2="920" y2="350" class="trunk-line"/>
+                
+                <!-- Core to IoT -->
+                <line x1="720" y1="200" x2="920" y2="550" class="trunk-line" opacity="0.7"/>
+                
+                <!-- Access to End Devices (simplified) -->
+                <line x1="80" y1="435" x2="60" y2="480" class="access-line"/>
+                <line x1="120" y1="435" x2="120" y2="480" class="access-line"/>
+                <line x1="160" y1="435" x2="180" y2="480" class="access-line"/>
+                
+                <line x1="260" y1="435" x2="250" y2="480" class="access-line"/>
+                <line x1="300" y1="435" x2="320" y2="480" class="access-line"/>
+                
+                <line x1="420" y1="435" x2="400" y2="480" class="access-line"/>
+                <line x1="460" y1="435" x2="480" y2="480" class="access-line"/>
+                
+                <line x1="580" y1="435" x2="560" y2="480" class="access-line"/>
+                <line x1="620" y1="435" x2="640" y2="480" class="access-line"/>
+                
+                <line x1="760" y1="435" x2="740" y2="480" class="access-line"/>
+                <line x1="800" y1="435" x2="820" y2="480" class="access-line"/>
+
+                <!-- Wireless connections -->
+                <line x1="600" y1="435" x2="600" y2="700" class="wireless-line"/>
+                <line x1="640" y1="435" x2="720" y2="700" class="wireless-line"/>
+                <line x1="760" y1="435" x2="840" y2="700" class="wireless-line"/>
+                
+                <!-- Wireless signals -->
+                <path d="M 600 720 Q 600 700 620 720" fill="none" stroke="#10b981" stroke-width="1"/>
+                <path d="M 595 730 Q 600 700 625 730" fill="none" stroke="#10b981" stroke-width="1"/>
+                <path d="M 720 720 Q 720 700 740 720" fill="none" stroke="#10b981" stroke-width="1"/>
+                <path d="M 715 730 Q 720 700 745 730" fill="none" stroke="#10b981" stroke-width="1"/>
+                <path d="M 840 720 Q 840 700 860 720" fill="none" stroke="#10b981" stroke-width="1"/>
+                <path d="M 835 730 Q 840 700 865 730" fill="none" stroke="#10b981" stroke-width="1"/>
+
+                <!-- WAN to Branch -->
+                <line x1="700" y1="120" x2="1200" y2="530" class="wan-line" stroke-dasharray="8,4"/>
+                <text x="980" y="340" fill="#f59e0b" font-size="8" transform="rotate(35 980 340)">WAN Link (Serial)</text>
+
+                <!-- Management connections -->
+                <line x1="120" y1="700" x2="250" y2="315" class="mgmt-line"/>
+
+                <!-- ========== DEVICES ========== -->
+                
+                <!-- Internet Cloud -->
+                <g class="device-group" transform="translate(530, 30)">
+                    <ellipse cx="70" cy="22" rx="80" ry="25" fill="url(#cloudGrad)" class="device-box"/>
+                    <text x="70" y="27" text-anchor="middle" fill="white" font-weight="bold" font-size="11">INTERNET</text>
+                </g>
+
+                <!-- Edge Router -->
+                <g class="device-group" transform="translate(530, 95)">
+                    <rect x="0" y="0" width="140" height="48" rx="6" fill="url(#routerGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="70" y="18" text-anchor="middle" fill="white" font-weight="bold" font-size="11">R-EDGE</text>
+                    <text x="70" y="32" text-anchor="middle" fill="#ddd" font-size="8">Edge Router / NAT</text>
+                    <text x="70" y="44" text-anchor="middle" fill="#93c5fd" font-size="7">203.0.113.1/30</text>
+                    <text x="70" y="58" text-anchor="middle" class="pt-device-label">Cisco 2911</text>
+                </g>
+
+                <!-- Core Router 1 -->
+                <g class="device-group" transform="translate(330, 160)">
+                    <rect x="0" y="0" width="130" height="52" rx="6" fill="url(#coreGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="65" y="16" text-anchor="middle" fill="white" font-weight="bold" font-size="11">R-CORE1</text>
+                    <text x="65" y="28" text-anchor="middle" fill="#fca5a5" font-size="8">HSRP Active (Pri:110)</text>
+                    <text x="65" y="40" text-anchor="middle" fill="#ddd" font-size="7">10.0.1.2/30</text>
+                    <text x="65" y="62" text-anchor="middle" class="pt-device-label">Cisco 2911</text>
+                </g>
+
+                <!-- Core Router 2 -->
+                <g class="device-group" transform="translate(600, 160)">
+                    <rect x="0" y="0" width="130" height="52" rx="6" fill="url(#coreGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="65" y="16" text-anchor="middle" fill="white" font-weight="bold" font-size="11">R-CORE2</text>
+                    <text x="65" y="28" text-anchor="middle" fill="#fde047" font-size="8">HSRP Standby (Pri:100)</text>
+                    <text x="65" y="40" text-anchor="middle" fill="#ddd" font-size="7">10.0.2.2/30</text>
+                    <text x="65" y="62" text-anchor="middle" class="pt-device-label">Cisco 2911</text>
+                </g>
+
+                <!-- HSRP VIP Badge -->
+                <g transform="translate(490, 182)">
+                    <rect x="0" y="0" width="80" height="20" rx="10" fill="#ef4444" opacity="0.9"/>
+                    <text x="40" y="14" text-anchor="middle" fill="white" font-size="8" font-weight="bold">VIP: .1</text>
+                </g>
+
+                <!-- DMZ Firewall/Router -->
+                <g class="device-group" transform="translate(920, 55)">
+                    <rect x="0" y="0" width="100" height="45" rx="6" fill="url(#firewallGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="50" y="17" text-anchor="middle" fill="white" font-weight="bold" font-size="10">R-DMZ</text>
+                    <text x="50" y="30" text-anchor="middle" fill="#fca5a5" font-size="7">DMZ Router/FW</text>
+                    <text x="50" y="55" text-anchor="middle" class="pt-device-label">Cisco 2911 (as FW)</text>
+                </g>
+
+                <!-- DMZ Switch -->
+                <g class="device-group" transform="translate(1040, 55)">
+                    <rect x="0" y="0" width="100" height="40" rx="6" fill="url(#switchGrad)" class="device-box"/>
+                    <text x="50" y="16" text-anchor="middle" fill="white" font-weight="bold" font-size="10">SW-DMZ</text>
+                    <text x="50" y="28" text-anchor="middle" fill="#ddd" font-size="7">DMZ Switch</text>
+                    <text x="50" y="50" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+
+                <!-- DMZ Servers -->
+                <g class="device-group" transform="translate(920, 110)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#dmzGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="9">PUB-WEB</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#fff" font-size="7">HTTP/HTTPS</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#fef3c7" font-size="7">192.168.100.10</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1000, 110)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#dmzGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="9">PUB-MAIL</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#fff" font-size="7">SMTP/POP3</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#fef3c7" font-size="7">192.168.100.20</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1080, 110)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#dmzGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="9">EXT-DNS</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#fff" font-size="7">Public DNS</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#fef3c7" font-size="7">192.168.100.30</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1160, 110)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#dmzGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="9">NTP-SRV</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#fff" font-size="7">Time Server</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#fef3c7" font-size="7">192.168.100.40</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1240, 110)">
+                    <rect x="0" y="0" width="75" height="48" rx="5" fill="url(#dmzGrad)" class="device-box"/>
+                    <text x="37" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="9">REV-PROXY</text>
+                    <text x="37" y="26" text-anchor="middle" fill="#fff" font-size="7">Reverse Proxy</text>
+                    <text x="37" y="38" text-anchor="middle" fill="#fef3c7" font-size="7">192.168.100.50</text>
+                    <text x="37" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+
+                <!-- Distribution Switches -->
+                <g class="device-group" transform="translate(200, 265)">
+                    <rect x="0" y="0" width="160" height="48" rx="6" fill="url(#l3switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="80" y="17" text-anchor="middle" fill="white" font-weight="bold" font-size="11">SW-DIST1</text>
+                    <text x="80" y="30" text-anchor="middle" fill="#ddd" font-size="8">L3 Dist | STP Root</text>
+                    <text x="80" y="42" text-anchor="middle" fill="#67e8f9" font-size="7">172.16.10.11</text>
+                    <text x="80" y="58" text-anchor="middle" class="pt-device-label">Cisco 3560 (or 2960)</text>
+                </g>
+                <g class="device-group" transform="translate(490, 265)">
+                    <rect x="0" y="0" width="160" height="48" rx="6" fill="url(#l3switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="80" y="17" text-anchor="middle" fill="white" font-weight="bold" font-size="11">SW-DIST2</text>
+                    <text x="80" y="30" text-anchor="middle" fill="#ddd" font-size="8">L3 Dist | STP Secondary</text>
+                    <text x="80" y="42" text-anchor="middle" fill="#67e8f9" font-size="7">172.16.10.12</text>
+                    <text x="80" y="58" text-anchor="middle" class="pt-device-label">Cisco 3560 (or 2960)</text>
+                </g>
+
+                <!-- Access Switches -->
+                <g class="device-group" transform="translate(50, 385)">
+                    <rect x="0" y="0" width="130" height="48" rx="6" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="65" y="15" text-anchor="middle" fill="white" font-weight="bold" font-size="10">SW-ACC1</text>
+                    <text x="65" y="28" text-anchor="middle" fill="#ddd" font-size="8">IT Dept</text>
+                    <text x="65" y="40" text-anchor="middle" fill="#4ade80" font-size="7">VLAN 20 + Voice 60</text>
+                    <text x="65" y="56" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+                <g class="device-group" transform="translate(200, 385)">
+                    <rect x="0" y="0" width="130" height="48" rx="6" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="65" y="15" text-anchor="middle" fill="white" font-weight="bold" font-size="10">SW-ACC2</text>
+                    <text x="65" y="28" text-anchor="middle" fill="#ddd" font-size="8">HR Dept</text>
+                    <text x="65" y="40" text-anchor="middle" fill="#eab308" font-size="7">VLAN 30</text>
+                    <text x="65" y="56" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+                <g class="device-group" transform="translate(350, 385)">
+                    <rect x="0" y="0" width="130" height="48" rx="6" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="65" y="15" text-anchor="middle" fill="white" font-weight="bold" font-size="10">SW-ACC3</text>
+                    <text x="65" y="28" text-anchor="middle" fill="#ddd" font-size="8">Finance Dept</text>
+                    <text x="65" y="40" text-anchor="middle" fill="#ef4444" font-size="7">VLAN 40</text>
+                    <text x="65" y="56" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+                <g class="device-group" transform="translate(500, 385)">
+                    <rect x="0" y="0" width="150" height="48" rx="6" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="75" y="15" text-anchor="middle" fill="white" font-weight="bold" font-size="10">SW-ACC4</text>
+                    <text x="75" y="28" text-anchor="middle" fill="#ddd" font-size="8">Voice / Wireless</text>
+                    <text x="75" y="40" text-anchor="middle" fill="#10b981" font-size="7">VLAN 60, 70, 80</text>
+                    <text x="75" y="56" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+                <g class="device-group" transform="translate(670, 385)">
+                    <rect x="0" y="0" width="150" height="48" rx="6" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="75" y="15" text-anchor="middle" fill="white" font-weight="bold" font-size="10">SW-ACC5</text>
+                    <text x="75" y="28" text-anchor="middle" fill="#ddd" font-size="8">Printers / Shared</text>
+                    <text x="75" y="40" text-anchor="middle" fill="#64748b" font-size="7">VLAN 110</text>
+                    <text x="75" y="56" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+
+                <!-- End Devices - IT -->
+                <g class="device-group" transform="translate(40, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">IT-PC1</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#4ade80" font-size="7">V20</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">PC-PT</text>
+                </g>
+                <g class="device-group" transform="translate(95, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">IT-PC2</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#4ade80" font-size="7">V20</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">PC-PT</text>
+                </g>
+                <g class="device-group" transform="translate(150, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#phoneGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">📞 IP-Ph</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#06b6d4" font-size="7">V60</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">IP Phone</text>
+                </g>
+
+                <!-- End Devices - HR -->
+                <g class="device-group" transform="translate(220, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">HR-PC1</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#eab308" font-size="7">V30</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">PC-PT</text>
+                </g>
+                <g class="device-group" transform="translate(280, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">HR-PC2</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#eab308" font-size="7">V30</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">PC-PT</text>
+                </g>
+
+                <!-- End Devices - Finance -->
+                <g class="device-group" transform="translate(370, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">FIN-PC1</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#ef4444" font-size="7">V40</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">PC-PT</text>
+                </g>
+                <g class="device-group" transform="translate(430, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">FIN-PC2</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#ef4444" font-size="7">V40</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">PC-PT</text>
+                </g>
+
+                <!-- Voice/Wireless Devices -->
+                <g class="device-group" transform="translate(530, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#phoneGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">📞 IP-Ph2</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#06b6d4" font-size="7">V60</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">IP Phone</text>
+                </g>
+                <g class="device-group" transform="translate(590, 480)">
+                    <rect x="0" y="0" width="50" height="38" rx="4" fill="url(#phoneGrad)" class="device-box"/>
+                    <text x="25" y="15" text-anchor="middle" fill="white" font-size="8">📞 IP-Ph3</text>
+                    <text x="25" y="28" text-anchor="middle" fill="#06b6d4" font-size="7">V60</text>
+                    <text x="25" y="48" text-anchor="middle" class="pt-device-label">IP Phone</text>
+                </g>
+
+                <!-- Printers -->
+                <g class="device-group" transform="translate(700, 480)">
+                    <rect x="0" y="0" width="55" height="38" rx="4" fill="url(#printerGrad)" class="device-box"/>
+                    <text x="27" y="15" text-anchor="middle" fill="white" font-size="8">🖨️ PTR-IT</text>
+                    <text x="27" y="28" text-anchor="middle" fill="#94a3b8" font-size="7">V110</text>
+                    <text x="27" y="48" text-anchor="middle" class="pt-device-label">Printer</text>
+                </g>
+                <g class="device-group" transform="translate(760, 480)">
+                    <rect x="0" y="0" width="55" height="38" rx="4" fill="url(#printerGrad)" class="device-box"/>
+                    <text x="27" y="15" text-anchor="middle" fill="white" font-size="8">🖨️ PTR-HR</text>
+                    <text x="27" y="28" text-anchor="middle" fill="#94a3b8" font-size="7">V110</text>
+                    <text x="27" y="48" text-anchor="middle" class="pt-device-label">Printer</text>
+                </g>
+
+                <!-- Wireless Access Points -->
+                <g class="device-group" transform="translate(570, 700)">
+                    <ellipse cx="30" cy="22" rx="30" ry="18" fill="url(#wapGrad)" class="device-box"/>
+                    <text x="30" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="9">WAP1</text>
+                    <text x="30" y="32" text-anchor="middle" fill="#fff" font-size="6">Corp</text>
+                    <text x="30" y="55" text-anchor="middle" class="pt-device-label">AccessPoint-PT</text>
+                </g>
+                <g class="device-group" transform="translate(690, 700)">
+                    <ellipse cx="30" cy="22" rx="30" ry="18" fill="url(#wapGrad)" class="device-box"/>
+                    <text x="30" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="9">WAP2</text>
+                    <text x="30" y="32" text-anchor="middle" fill="#fff" font-size="6">Corp</text>
+                    <text x="30" y="55" text-anchor="middle" class="pt-device-label">AccessPoint-PT</text>
+                </g>
+                <g class="device-group" transform="translate(810, 700)">
+                    <ellipse cx="30" cy="22" rx="30" ry="18" fill="url(#wapGrad)" class="device-box" opacity="0.7"/>
+                    <text x="30" y="20" text-anchor="middle" fill="white" font-weight="bold" font-size="9">WAP3</text>
+                    <text x="30" y="32" text-anchor="middle" fill="#fff" font-size="6">Guest</text>
+                    <text x="30" y="55" text-anchor="middle" class="pt-device-label">AccessPoint-PT</text>
+                </g>
+
+                <!-- Wireless Clients -->
+                <g class="device-group" transform="translate(600, 760)">
+                    <rect x="0" y="0" width="45" height="32" rx="4" fill="url(#pcGrad)" class="device-box" opacity="0.8"/>
+                    <text x="22" y="14" text-anchor="middle" fill="white" font-size="7">💻 Laptop</text>
+                    <text x="22" y="25" text-anchor="middle" fill="#10b981" font-size="6">V70</text>
+                    <text x="22" y="43" text-anchor="middle" class="pt-device-label">Laptop-PT</text>
+                </g>
+                <g class="device-group" transform="translate(660, 760)">
+                    <rect x="0" y="0" width="45" height="32" rx="4" fill="url(#pcGrad)" class="device-box" opacity="0.8"/>
+                    <text x="22" y="14" text-anchor="middle" fill="white" font-size="7">📱 Tablet</text>
+                    <text x="22" y="25" text-anchor="middle" fill="#10b981" font-size="6">V70</text>
+                    <text x="22" y="43" text-anchor="middle" class="pt-device-label">Tablet-PT</text>
+                </g>
+                <g class="device-group" transform="translate(780, 760)">
+                    <rect x="0" y="0" width="50" height="32" rx="4" fill="url(#pcGrad)" class="device-box" opacity="0.6"/>
+                    <text x="25" y="14" text-anchor="middle" fill="white" font-size="7">📱 Guest</text>
+                    <text x="25" y="25" text-anchor="middle" fill="#f97316" font-size="6">V80</text>
+                    <text x="25" y="43" text-anchor="middle" class="pt-device-label">Smartphone</text>
+                </g>
+
+                <!-- Server Farm Switch -->
+                <g class="device-group" transform="translate(1050, 305)">
+                    <rect x="0" y="0" width="150" height="45" rx="6" fill="url(#switchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="75" y="17" text-anchor="middle" fill="white" font-weight="bold" font-size="10">SW-SRV</text>
+                    <text x="75" y="30" text-anchor="middle" fill="#ddd" font-size="8">Server Farm VLAN 50</text>
+                    <text x="75" y="55" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+
+                <!-- Internal Servers -->
+                <g class="device-group" transform="translate(920, 365)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="8">INT-DNS</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#ddd" font-size="7">DNS/DHCP</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#c4b5fd" font-size="7">172.16.50.10</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1000, 365)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="8">FILE-SRV</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#ddd" font-size="7">FTP/SMB</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#c4b5fd" font-size="7">172.16.50.20</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1080, 365)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="8">APP-SRV</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#ddd" font-size="7">Intranet</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#c4b5fd" font-size="7">172.16.50.30</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1160, 365)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="8">SYSLOG</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#ddd" font-size="7">Logging</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#c4b5fd" font-size="7">172.16.50.40</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(1240, 365)">
+                    <rect x="0" y="0" width="70" height="48" rx="5" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="14" text-anchor="middle" fill="white" font-weight="bold" font-size="8">AAA-SRV</text>
+                    <text x="35" y="26" text-anchor="middle" fill="#ddd" font-size="7">RADIUS</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#c4b5fd" font-size="7">172.16.50.50</text>
+                    <text x="35" y="58" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+
+                <!-- IoT Switch -->
+                <g class="device-group" transform="translate(920, 520)">
+                    <rect x="0" y="0" width="120" height="40" rx="6" fill="url(#switchGrad)" class="device-box"/>
+                    <text x="60" y="16" text-anchor="middle" fill="white" font-weight="bold" font-size="9">SW-IOT</text>
+                    <text x="60" y="28" text-anchor="middle" fill="#84cc16" font-size="7">VLAN 90</text>
+                    <text x="60" y="50" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+
+                <!-- IoT Devices -->
+                <g class="device-group" transform="translate(920, 575)">
+                    <rect x="0" y="0" width="55" height="40" rx="4" fill="url(#iotGrad)" class="device-box"/>
+                    <text x="27" y="15" text-anchor="middle" fill="white" font-size="8">📷 CAM1</text>
+                    <text x="27" y="28" text-anchor="middle" fill="#d9f99d" font-size="7">IP Cam</text>
+                    <text x="27" y="50" text-anchor="middle" class="pt-device-label">IoT Device</text>
+                </g>
+                <g class="device-group" transform="translate(985, 575)">
+                    <rect x="0" y="0" width="55" height="40" rx="4" fill="url(#iotGrad)" class="device-box"/>
+                    <text x="27" y="15" text-anchor="middle" fill="white" font-size="8">📷 CAM2</text>
+                    <text x="27" y="28" text-anchor="middle" fill="#d9f99d" font-size="7">IP Cam</text>
+                    <text x="27" y="50" text-anchor="middle" class="pt-device-label">IoT Device</text>
+                </g>
+                <g class="device-group" transform="translate(1050, 575)">
+                    <rect x="0" y="0" width="55" height="40" rx="4" fill="url(#iotGrad)" class="device-box"/>
+                    <text x="27" y="15" text-anchor="middle" fill="white" font-size="8">🚪 DOOR</text>
+                    <text x="27" y="28" text-anchor="middle" fill="#d9f99d" font-size="7">Access</text>
+                    <text x="27" y="50" text-anchor="middle" class="pt-device-label">IoT Device</text>
+                </g>
+
+                <!-- Branch Office -->
+                <g class="device-group" transform="translate(1190, 520)">
+                    <rect x="0" y="0" width="110" height="48" rx="6" fill="url(#branchGrad)" class="device-box" filter="url(#glow)"/>
+                    <text x="55" y="17" text-anchor="middle" fill="white" font-weight="bold" font-size="10">R-BRANCH</text>
+                    <text x="55" y="30" text-anchor="middle" fill="#fce7f3" font-size="7">Site B Router</text>
+                    <text x="55" y="42" text-anchor="middle" fill="#fbcfe8" font-size="7">10.0.99.2/30</text>
+                    <text x="55" y="60" text-anchor="middle" class="pt-device-label">Cisco 2911</text>
+                </g>
+                <g class="device-group" transform="translate(1310, 520)">
+                    <rect x="0" y="0" width="100" height="42" rx="5" fill="url(#switchGrad)" class="device-box"/>
+                    <text x="50" y="16" text-anchor="middle" fill="white" font-size="9">SW-BRANCH</text>
+                    <text x="50" y="30" text-anchor="middle" fill="#ddd" font-size="7">Branch Switch</text>
+                    <text x="50" y="52" text-anchor="middle" class="pt-device-label">Cisco 2960</text>
+                </g>
+                <g class="device-group" transform="translate(1200, 585)">
+                    <rect x="0" y="0" width="50" height="35" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="14" text-anchor="middle" fill="white" font-size="8">BR-PC1</text>
+                    <text x="25" y="26" text-anchor="middle" fill="#ec4899" font-size="7">V20</text>
+                </g>
+                <g class="device-group" transform="translate(1260, 585)">
+                    <rect x="0" y="0" width="50" height="35" rx="4" fill="url(#pcGrad)" class="device-box"/>
+                    <text x="25" y="14" text-anchor="middle" fill="white" font-size="8">BR-PC2</text>
+                    <text x="25" y="26" text-anchor="middle" fill="#ec4899" font-size="7">V30</text>
+                </g>
+                <g class="device-group" transform="translate(1320, 585)">
+                    <rect x="0" y="0" width="55" height="35" rx="4" fill="url(#printerGrad)" class="device-box"/>
+                    <text x="27" y="14" text-anchor="middle" fill="white" font-size="8">🖨️ BR-PTR</text>
+                    <text x="27" y="26" text-anchor="middle" fill="#94a3b8" font-size="7">V110</text>
+                </g>
+                <g class="device-group" transform="translate(1200, 635)">
+                    <ellipse cx="25" cy="18" rx="25" ry="14" fill="url(#wapGrad)" class="device-box"/>
+                    <text x="25" y="16" text-anchor="middle" fill="white" font-size="8">WAP-BR</text>
+                    <text x="25" y="45" text-anchor="middle" class="pt-device-label">AccessPoint-PT</text>
+                </g>
+
+                <!-- Management Server -->
+                <g class="device-group" transform="translate(40, 710)">
+                    <rect x="0" y="0" width="75" height="50" rx="5" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="37" y="15" text-anchor="middle" fill="white" font-weight="bold" font-size="9">MGMT-SRV</text>
+                    <text x="37" y="28" text-anchor="middle" fill="#ddd" font-size="7">NMS/SNMP</text>
+                    <text x="37" y="40" text-anchor="middle" fill="#c4b5fd" font-size="7">172.16.10.100</text>
+                    <text x="37" y="60" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+                <g class="device-group" transform="translate(125, 710)">
+                    <rect x="0" y="0" width="70" height="50" rx="5" fill="url(#serverGrad)" class="device-box"/>
+                    <text x="35" y="15" text-anchor="middle" fill="white" font-weight="bold" font-size="9">TFTP-SRV</text>
+                    <text x="35" y="28" text-anchor="middle" fill="#ddd" font-size="7">Backup</text>
+                    <text x="35" y="40" text-anchor="middle" fill="#c4b5fd" font-size="7">172.16.10.101</text>
+                    <text x="35" y="60" text-anchor="middle" class="pt-device-label">Server-PT</text>
+                </g>
+
+                <!-- IPv6 Labels -->
+                <g transform="translate(40, 535)">
+                    <rect x="0" y="0" width="85" height="16" rx="3" fill="#8b5cf6" opacity="0.3"/>
+                    <text x="42" y="12" text-anchor="middle" fill="#c4b5fd" font-size="7">2001:db8:20::/64</text>
+                </g>
+                <g transform="translate(220, 535)">
+                    <rect x="0" y="0" width="85" height="16" rx="3" fill="#8b5cf6" opacity="0.3"/>
+                    <text x="42" y="12" text-anchor="middle" fill="#c4b5fd" font-size="7">2001:db8:30::/64</text>
+                </g>
+                <g transform="translate(370, 535)">
+                    <rect x="0" y="0" width="85" height="16" rx="3" fill="#8b5cf6" opacity="0.3"/>
+                    <text x="42" y="12" text-anchor="middle" fill="#c4b5fd" font-size="7">2001:db8:40::/64</text>
+                </g>
+            </svg>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-line legend-trunk"></div><span>Trunk (802.1Q)</span></div>
+            <div class="legend-item"><div class="legend-line legend-access"></div><span>Access Port</span></div>
+            <div class="legend-item"><div class="legend-line legend-wan"></div><span>WAN Link</span></div>
+            <div class="legend-item"><div class="legend-line legend-ether"></div><span>EtherChannel</span></div>
+            <div class="legend-item"><div class="legend-line legend-hsrp" style="border-top:2px dashed #ef4444"></div><span>HSRP</span></div>
+            <div class="legend-item"><div class="legend-line legend-wireless" style="border-top:2px dotted #10b981"></div><span>Wireless</span></div>
+            <div class="legend-item"><div class="legend-line legend-mgmt" style="border-top:2px dotted #8b5cf6"></div><span>Management</span></div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>📊 Complete VLAN Architecture</h3>
+                <table>
+                    <tr><td><span class="vlan-tag v10">10</span></td><td>Management</td><td>172.16.10.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v20">20</span></td><td>IT Department</td><td>172.16.20.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v30">30</span></td><td>HR Department</td><td>172.16.30.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v40">40</span></td><td>Finance Dept</td><td>172.16.40.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v50">50</span></td><td>Internal Servers</td><td>172.16.50.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v60">60</span></td><td>Voice (VoIP)</td><td>172.16.60.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v70">70</span></td><td>Wireless Corp</td><td>172.16.70.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v80">80</span></td><td>Guest Network</td><td>172.16.80.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v90">90</span></td><td>IoT/Cameras</td><td>172.16.90.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v100">100</span></td><td>DMZ</td><td>192.168.100.0/24</td></tr>
+                    <tr><td><span class="vlan-tag v110">110</span></td><td>Printers</td><td>172.16.110.0/24</td></tr>
+                    <tr><td style="background:#333">99</td><td>Native (Unused)</td><td>—</td></tr>
+                </table>
+            </div>
+            <div class="info-card">
+                <h3>🔌 Packet Tracer Device Models</h3>
+                <table>
+                    <tr><td>Routers</td><td class="highlight">Cisco 2911</td></tr>
+                    <tr><td>L3 Switches</td><td class="highlight">Cisco 3560-24PS</td></tr>
+                    <tr><td>L2 Switches</td><td class="highlight">Cisco 2960-24TT</td></tr>
+                    <tr><td>Servers</td><td class="highlight">Server-PT</td></tr>
+                    <tr><td>PCs</td><td class="highlight">PC-PT</td></tr>
+                    <tr><td>Laptops</td><td class="highlight">Laptop-PT</td></tr>
+                    <tr><td>IP Phones</td><td class="highlight">7960 IP Phone</td></tr>
+                    <tr><td>WAPs</td><td class="highlight">AccessPoint-PT</td></tr>
+                    <tr><td>Printers</td><td class="highlight">Printer-PT</td></tr>
+                    <tr><td>Tablets</td><td class="highlight">Tablet PC-PT</td></tr>
+                </table>
+            </div>
+            <div class="info-card">
+                <h3>🛡️ Security Features</h3>
+                <table>
+                    <tr><td>Gateway Redundancy</td><td class="highlight">HSRP v2</td></tr>
+                    <tr><td>Link Aggregation</td><td class="highlight">LACP EtherChannel</td></tr>
+                    <tr><td>STP Mode</td><td class="highlight">Rapid PVST+</td></tr>
+                    <tr><td>Port Security</td><td class="highlight">Sticky MAC + Shutdown</td></tr>
+                    <tr><td>Management</td><td class="highlight">SSHv2 Only</td></tr>
+                    <tr><td>ACL Types</td><td class="highlight">Standard + Extended</td></tr>
+                    <tr><td>Guest Isolation</td><td class="highlight">ACL Restricted</td></tr>
+                    <tr><td>IoT Isolation</td><td class="highlight">Separate VLAN 90</td></tr>
+                </table>
+            </div>
+            <div class="info-card">
+                <h3>📡 Wireless Configuration</h3>
+                <table>
+                    <tr><td>Corporate SSID</td><td class="highlight">TechCorp-Corp</td></tr>
+                    <tr><td>Corp VLAN</td><td>VLAN 70</td></tr>
+                    <tr><td>Corp Security</td><td>WPA2-Enterprise</td></tr>
+                    <tr><td>Guest SSID</td><td class="highlight">TechCorp-Guest</td></tr>
+                    <tr><td>Guest VLAN</td><td>VLAN 80</td></tr>
+                    <tr><td>Guest Security</td><td>WPA2-PSK</td></tr>
+                    <tr><td>WAP Model</td><td class="highlight">AccessPoint-PT</td></tr>
+                    <tr><td>Client NIC</td><td class="highlight">WPC300N</td></tr>
+                </table>
+            </div>
+            <div class="info-card">
+                <h3>🖥️ DMZ Services (Public)</h3>
+                <table>
+                    <tr><td>PUB-WEB</td><td>192.168.100.10</td><td>HTTP/S</td></tr>
+                    <tr><td>PUB-MAIL</td><td>192.168.100.20</td><td>SMTP</td></tr>
+                    <tr><td>EXT-DNS</td><td>192.168.100.30</td><td>DNS</td></tr>
+                    <tr><td>NTP-SRV</td><td>192.168.100.40</td><td>NTP</td></tr>
+                    <tr><td>REV-PROXY</td><td>192.168.100.50</td><td>Proxy</td></tr>
+                </table>
+            </div>
+            <div class="info-card">
+                <h3>🏢 Internal Services</h3>
+                <table>
+                    <tr><td>INT-DNS</td><td>172.16.50.10</td><td>DNS/DHCP</td></tr>
+                    <tr><td>FILE-SRV</td><td>172.16.50.20</td><td>FTP/SMB</td></tr>
+                    <tr><td>APP-SRV</td><td>172.16.50.30</td><td>Intranet</td></tr>
+                    <tr><td>SYSLOG</td><td>172.16.50.40</td><td>Logging</td></tr>
+                    <tr><td>AAA-SRV</td><td>172.16.50.50</td><td>RADIUS</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="device-list">
+            <div class="device-category">
+                <h4>🔌 Routers (5 Total)</h4>
+                <ul>
+                    <li><span>R-EDGE</span><span class="model">Cisco 2911</span></li>
+                    <li><span>R-CORE1 (HSRP Active)</span><span class="model">Cisco 2911</span></li>
+                    <li><span>R-CORE2 (HSRP Standby)</span><span class="model">Cisco 2911</span></li>
+                    <li><span>R-DMZ (Firewall Role)</span><span class="model">Cisco 2911</span></li>
+                    <li><span>R-BRANCH (Site B)</span><span class="model">Cisco 2911</span></li>
+                </ul>
+            </div>
+            <div class="device-category">
+                <h4>🔀 Switches (10 Total)</h4>
+                <ul>
+                    <li><span>SW-DIST1 (STP Root)</span><span class="model">3560 or 2960</span></li>
+                    <li><span>SW-DIST2 (STP Secondary)</span><span class="model">3560 or 2960</span></li>
+                    <li><span>SW-ACC1 (IT Dept)</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-ACC2 (HR Dept)</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-ACC3 (Finance)</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-ACC4 (Voice/Wireless)</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-ACC5 (Printers)</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-SRV (Server Farm)</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-DMZ</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-IOT (Cameras)</span><span class="model">Cisco 2960</span></li>
+                    <li><span>SW-BRANCH (Site B)</span><span class="model">Cisco 2960</span></li>
+                </ul>
+            </div>
+            <div class="device-category">
+                <h4>🖥️ Servers (11 Total)</h4>
+                <ul>
+                    <li><span>PUB-WEB (DMZ)</span><span class="model">Server-PT</span></li>
+                    <li><span>PUB-MAIL (DMZ)</span><span class="model">Server-PT</span></li>
+                    <li><span>EXT-DNS (DMZ)</span><span class="model">Server-PT</span></li>
+                    <li><span>NTP-SRV (DMZ)</span><span class="model">Server-PT</span></li>
+                    <li><span>REV-PROXY (DMZ)</span><span class="model">Server-PT</span></li>
+                    <li><span>INT-DNS (Internal)</span><span class="model">Server-PT</span></li>
+                    <li><span>FILE-SRV (Internal)</span><span class="model">Server-PT</span></li>
+                    <li><span>APP-SRV (Internal)</span><span class="model">Server-PT</span></li>
+                    <li><span>SYSLOG (Internal)</span><span class="model">Server-PT</span></li>
+                    <li><span>AAA-SRV (Internal)</span><span class="model">Server-PT</span></li>
+                    <li><span>MGMT-SRV (Mgmt)</span><span class="model">Server-PT</span></li>
+                </ul>
+            </div>
+            <div class="device-category">
+                <h4>📶 Wireless (4 WAPs)</h4>
+                <ul>
+                    <li><span>WAP1 (Corporate - HQ Floor 1)</span><span class="model">AccessPoint-PT</span></li>
+                    <li><span>WAP2 (Corporate - HQ Floor 2)</span><span class="model">AccessPoint-PT</span></li>
+                    <li><span>WAP3 (Guest - HQ Lobby)</span><span class="model">AccessPoint-PT</span></li>
+                    <li><span>WAP-BR (Branch Office)</span><span class="model">AccessPoint-PT</span></li>
+                </ul>
+            </div>
+            <div class="device-category">
+                <h4>💻 End Devices (15+)</h4>
+                <ul>
+                    <li><span>IT-PC1, IT-PC2</span><span class="model">PC-PT</span></li>
+                    <li><span>HR-PC1, HR-PC2</span><span class="model">PC-PT</span></li>
+                    <li><span>FIN-PC1, FIN-PC2</span><span class="model">PC-PT</span></li>
+                    <li><span>BR-PC1, BR-PC2 (Branch)</span><span class="model">PC-PT</span></li>
+                    <li><span>Laptop (Wireless)</span><span class="model">Laptop-PT + WPC300N</span></li>
+                    <li><span>Tablet (Wireless)</span><span class="model">Tablet PC-PT</span></li>
+                    <li><span>Guest Phone</span><span class="model">Smartphone-PT</span></li>
+                </ul>
+            </div>
+            <div class="device-category">
+                <h4>📞 VoIP & IoT</h4>
+                <ul>
+                    <li><span>IP-Phone1 (IT Desk)</span><span class="model">7960 IP Phone</span></li>
+                    <li><span>IP-Phone2 (Voice Room)</span><span class="model">7960 IP Phone</span></li>
+                    <li><span>IP-Phone3 (Voice Room)</span><span class="model">7960 IP Phone</span></li>
+                    <li><span>CAM1, CAM2 (IP Cameras)</span><span class="model">Home Gateway (as IoT)</span></li>
+                    <li><span>DOOR (Access Control)</span><span class="model">Home Gateway (as IoT)</span></li>
+                    <li><span>PTR-IT, PTR-HR, BR-PTR</span><span class="model">Printer-PT</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
