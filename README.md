@@ -1,27 +1,38 @@
 # Cisco Networking Coursework
 
-Packet Tracer labs and network design projects from three semesters of networking coursework, organized by semester. Covers routing & switching fundamentals through enterprise network design: VLANs, inter-VLAN routing, OSPF, EIGRP, RIPv2, ACLs, NAT/PAT, DHCP, STP, EtherChannel, port security, IPv6 addressing, wireless configuration, and site-to-site VPN.
+Packet Tracer labs and network design projects from my networking courses at North American University, Spring 2025 through Spring 2026.
 
-## Structure
+## spring-2025
 
-- **`spring-2025/labs/`** — 10 labs (EtherChannel, inter-VLAN routing, extended ACLs, site-to-site IPsec VPN, midterm/pre-final exams)
-- **`fall-2025/labs/`** — 96 labs spanning a full course progression, from initial device configuration through a final troubleshooting/skills-integration challenge
-- **`fall-2025/project/`** — a network design project for a fictional company ("TechCorp") plus a related internetworking documentation deliverable: written reports (PDF) and interactive HTML topology diagrams
-- **`spring-2026/labs/`** — 25 Packet Tracer labs
-- **`spring-2026/project/`** — COMP4358 (Cloud Computing) final project: a wireless enterprise network build for a fictional company ("TechNova") — build guide, two-part submission, final report, and completed Packet Tracer file
-- **`spring-2026/cloud-computing-labs/`** — individual COMP4358 lab reports: Azure NSGs, Load Balancer + NAT Gateway, Application Gateway + Traffic Manager, an Azure VM web server build, and a Bluetooth/BLE packet-sniffing analysis
+Switching and routing labs: EtherChannel, router-on-a-stick inter-VLAN routing, extended IPv4 ACLs, and a site-to-site IPsec VPN configured from the CLI.
 
-## What's not here yet
+## fall-2025
 
-A few other things turned up while sorting this out that aren't included:
+The bulk of the coursework, 96 labs:
 
-- Nothing from before Spring 2025 — no earlier networking coursework was found in Downloads, so if there's a Fall 2024 semester it likely lives somewhere else (cloud storage, another device).
-- A "Project 1/2/3" series (pfSense + ELK + EVE-NG, then SD-WAN + Ansible + BGP, then a Suricata IDS/SIEM security operations platform) — these look like self-study build guides rather than finished, submitted work, so they weren't added as portfolio pieces without confirming they were actually completed.
+* Routing: static routes, RIPv2, EIGRP for IPv4 and IPv6, OSPF
+* Switching: VLANs, VTP, STP, PVST, EtherChannel, port security
+* Services: DHCPv4, static and dynamic NAT, PAT
+* ACLs: numbered and named standard, extended, IPv6, and ACLs on VTY lines
 
-## Opening the labs
+`project/` holds the TechCorp enterprise network design: written documentation and interactive HTML topology diagrams.
 
-`.pka` and `.pkt` files open in [Cisco Packet Tracer](https://www.netacad.com/courses/packet-tracer), free through Cisco Networking Academy / Skills for All.
+## spring-2026
 
-## A note on organization
+COMP 4358, Cloud Computing.
 
-These were pulled together and sorted by date from a downloads folder rather than from folders that were organized by semester at the time, so the exact semester boundaries are inferred from file timestamps rather than confirmed. If anything looks miscategorized, it's safe to just move it.
+Packet Tracer labs cover IPv6 addressing and subnetting, WPA2-Enterprise WLAN on a wireless LAN controller, connectivity troubleshooting with ping, traceroute and ICMP, and device hardening with SSH.
+
+`cloud-computing-labs/` is the Azure side:
+
+* NSG rules limiting SSH to a single source IP, with a jump host reaching a private VM
+* Load Balancer with NAT Gateway
+* Application Gateway with Traffic Manager
+* Azure VM web server build
+* Bluetooth packet capture and analysis using Wireshark with the Bluetooth Test Platform
+
+`project/` is the final project: TechNova, a wireless network for a three-story office. Dual-core Layer 3 distribution with HSRP gateways and LACP EtherChannels, OSPF between the cores and the edge router, seven lightweight APs registered to a WLC over CAPWAP with WPA2-Enterprise against RADIUS, and a management plane locked to SSH with NTP, syslog, BPDU Guard and guest VLAN isolation.
+
+## Opening the files
+
+`.pka` and `.pkt` files open in Cisco Packet Tracer, free through Cisco Networking Academy.
